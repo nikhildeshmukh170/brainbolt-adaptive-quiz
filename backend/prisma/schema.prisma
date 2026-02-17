@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+
+  state     UserState?
+  answers   AnswerLog[]
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  difficulty  Int
+  question    String
+  options     Json
+  correct     String
+
+  createdAt   DateTime @default(now())
+
+  answers     AnswerLog[]
+}
+
+model UserState {
+  userId            String  @id
+  currentDifficulty Int     @default(5)
+  streak            Int     @default(0)
+  maxStreak         Int     @default(0)
+  totalScore        Float   @default(0)
+  confidence        Int     @default(0)
+
+  correctAnswers    Int     @default(0)
+  totalAnswers      Int     @default(0)
+
+  lastAnsweredAt    DateTime?
+  stateVersion      Int     @default(1)
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AnswerLog {
+  id              String   @id @default(cuid())
+  userId          String
+  questionId      String
+
+  difficulty      Int
+  correct         Boolean
+  scoreDelta      Float
+  streakAtAnswer  Int
+
+  answeredAt      DateTime @default(now())
+
+  idempotencyKey  String   @unique
+
+  user     User     @relation(fields: [userId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+}

@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+
+  api:
+    build: .
+    container_name: brainbolt-api
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/brainbolt
+      REDIS_URL: redis://redis:6379
+      PORT: 4000
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:15
+    container_name: brainbolt-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: brainbolt
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: brainbolt-redis
+    ports:
+      - "6379:6379"
+
+  frontend:
+    build:
+      context: ../frontend/apps/web
+      dockerfile: Dockerfile
+    container_name: brainbolt-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:4000
+      NEXT_PUBLIC_SOCKET_URL: http://api:4000
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
